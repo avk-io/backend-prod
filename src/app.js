@@ -20,13 +20,6 @@ const authRoutes = require("./routes/auth.routes");
 const asyncHandler = require("./utils/asyncHandler");
 app.use("/auth", authRoutes);
 
-// Ping route
-app.get("/ping", (req, res) => {
-  res.json({
-    msg: "ping"
-  });
-});
-
 // Profile route (cleaned)
 app.get("/profile", authMiddleware, asyncHandler(async(req, res) => {
   const user = await User.findById(req.userId);
