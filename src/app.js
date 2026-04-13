@@ -1,7 +1,11 @@
 require("dotenv").config();
 const express = require("express")
+const http = require("http")
 const cookieParser = require("cookie-parser")
 const app = express();
+const server = http.createServer(app)
+
+app.use(express.static("src/public"))
 
 const connectDB = require("./config/db");
 connectDB();
@@ -40,9 +44,12 @@ app.get("/profile", authMiddleware, asyncHandler(async(req, res) => {
 
 app.use(errorMiddleware);
 
+const initSocket = require("./sockets")
+initSocket(server)
+
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
