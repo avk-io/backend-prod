@@ -1,12 +1,13 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const crypto = require('node:crypto');
+const crypto = require("node:crypto");
 const User = require("../models/user.model");
 
 const { success, error } = require("../utils/response");
 const asyncHandler = require("../utils/asyncHandler");
 
-exports.signup = async (req, res) => {
+//  SIGNUP 
+exports.signup = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const existingUser = await User.findOne({ email });
@@ -25,9 +26,10 @@ exports.signup = async (req, res) => {
     userId: user._id,
     email: user.email
   });
-};
+});
 
-exports.login = async (req, res) => {
+//  LOGIN 
+exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ email });
@@ -47,26 +49,37 @@ exports.login = async (req, res) => {
   );
 
   const refreshToken = jwt.sign(
-    {
-      userId: user._id},
-      process.env.REFRESH_TOKEN_SECRET,
-    {expiresIn: "168h"}
-  )
+    { userId: user._id },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "168h" }
+  );
 
-  const refreshTokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex')
-  user.refreshTokenHash = refreshTokenHash
-  await user.save()
+  const refreshTokenHash = crypto
+    .createHash("sha256")
+    .update(refreshToken)
+    .digest("hex");
 
-  res.cookie("refreshToken",refreshToken,{
+  user.refreshTokenHash = refreshTokenHash;
+
+  // Bind session
+  user.refreshMeta = {
+    ip: req.ip,
+    userAgent: req.headers["user-agent"]
+  };
+
+  await user.save();
+
+  res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
-    maxAge: 7*24*60*60*1000
-  })
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
 
   return success(res, { accessToken });
-};
+});
 
+//  REFRESH 
 exports.refresh = asyncHandler(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
 
@@ -74,13 +87,13 @@ exports.refresh = asyncHandler(async (req, res) => {
     return error(res, 401, "Missing Refresh Token");
   }
 
-  let decoded;  
+  let decoded;
   try {
     decoded = jwt.verify(
       refreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
-  } catch (err) {
+  } catch {
     return error(res, 401, "Invalid/Expired refresh token");
   }
 
@@ -88,6 +101,14 @@ exports.refresh = asyncHandler(async (req, res) => {
 
   if (!user) {
     return error(res, 404, "User not found");
+  }
+
+  //  Session binding check
+  if (
+    user.refreshMeta?.ip !== req.ip ||
+    user.refreshMeta?.userAgent !== req.headers["user-agent"]
+  ) {
+    return error(res, 401, "Suspicious session detected");
   }
 
   const incomingHash = crypto
@@ -99,6 +120,7 @@ exports.refresh = asyncHandler(async (req, res) => {
     return error(res, 401, "Refresh Token mismatch");
   }
 
+  // Rotate refresh token
   const newRefreshToken = jwt.sign(
     { userId: user._id },
     process.env.REFRESH_TOKEN_SECRET,
@@ -110,14 +132,20 @@ exports.refresh = asyncHandler(async (req, res) => {
     .update(newRefreshToken)
     .digest("hex");
 
-
   user.refreshTokenHash = newHash;
+
+  // Update session meta
+  user.refreshMeta = {
+    ip: req.ip,
+    userAgent: req.headers["user-agent"]
+  };
+
   await user.save();
 
   res.cookie("refreshToken", newRefreshToken, {
     httpOnly: true,
-    secure: false, 
-    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000
   });
 
@@ -130,26 +158,37 @@ exports.refresh = asyncHandler(async (req, res) => {
   return success(res, { accessToken });
 });
 
-exports.logout = asyncHandler(async(req,res)=>{
-  const refreshToken = req.cookies.refreshToken
+//  LOGOUT 
+exports.logout = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
 
-  if(!refreshToken){
-    return success(res,{msg:"Logged Out"})
+  if (!refreshToken) {
+    return success(res, { msg: "Logged Out" });
   }
 
-  const decoded = jwt.verify(
-    refreshToken,
-    process.env.REFRESH_TOKEN_SECRET
-  )
-
-  const user = await User.findById(decoded.userId)
-
-  if(user){
-    user.refreshTokenHash = null
-    await user.save()
+  let decoded;
+  try {
+    decoded = jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+  } catch {
+    return success(res, { msg: "Logged Out" });
   }
 
-  res.clearCookie("refreshToken")
+  const user = await User.findById(decoded.userId);
 
-  return success(res,{msg:"Logged Out"})
-})
+  if (user) {
+    user.refreshTokenHash = null;
+    user.refreshMeta = null;
+    await user.save();
+  }
+
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict"
+  });
+
+  return success(res, { msg: "Logged Out" });
+});

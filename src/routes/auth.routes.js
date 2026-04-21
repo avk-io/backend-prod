@@ -1,5 +1,7 @@
 const express = require("express")
 const router = express.Router()
+const validate = require("../middleware/validate");
+const { signupSchema, loginSchema } = require("../validators/auth.validator");
 
 const{
     signup,
@@ -8,13 +10,22 @@ const{
     logout
 } = require("../controllers/auth.controller")
 
-const validUserCredentials = require("../middleware/middleware2")
 const asyncHandler = require("../utils/asyncHandler");
 
+const rateLimit = require("express-rate-limit");
 
-router.post("/signup",validUserCredentials,asyncHandler(signup))
-router.post("/login",validUserCredentials,asyncHandler(login))
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // only 10 attempts
+  message: {
+    success: false,
+    message: "Too many login attempts"
+  }
+});
+
+router.post("/signup", validate(signupSchema), asyncHandler(signup))
+router.post("/login", validate(loginSchema), asyncHandler(login))
 router.post("/refresh", asyncHandler(refresh));
-router.post("/logout",logout)
+router.post("/logout",asyncHandler(logout))
 
 module.exports = router
