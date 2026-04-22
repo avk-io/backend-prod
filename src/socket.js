@@ -11,6 +11,7 @@ module.exports= (server)=>{
 
     io.use((socket,next)=>{
         const token = socket.handshake.auth.token;
+
         if(!token){
             return next(new Error("No token"))
         }
@@ -24,6 +25,8 @@ module.exports= (server)=>{
         }catch{
             next(new Error("Invalid Token"))
         }
+        console.log("TOKEN RECEIVED:", socket.handshake.auth.token);
+
     });
     io.on("Connection",(socket)=>{
         console.log("Connected:",socket.userId)
@@ -33,3 +36,6 @@ module.exports= (server)=>{
         });
     });
 };
+
+console.log("SECRET:", process.env.ACCESS_TOKEN_SECRET);
+console.log("SOCKET SECRET:", process.env.ACCESS_TOKEN_SECRET);

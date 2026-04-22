@@ -72,7 +72,7 @@ app.use((req, res) => {
 
 app.use(errorMiddleware);
 
-const initSocket = require("./sockets");
+const initSocket = require("./socket");
 initSocket(server);
 
 const PORT = process.env.PORT || 3000;
