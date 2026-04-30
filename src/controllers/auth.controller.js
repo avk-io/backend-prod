@@ -32,7 +32,6 @@ exports.signup = asyncHandler(async (req, res) => {
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  console.log("SOCKET SECRET:", process.env.ACCESS_TOKEN_SECRET);
   const user = await User.findOne({ email });
   if (!user) {
     return error(res, 404, "User not found");
@@ -46,7 +45,7 @@ exports.login = asyncHandler(async (req, res) => {
   const accessToken = jwt.sign(
     { userId: user._id },
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: "15m" }
+    { expiresIn: "20s" }
   );
 
   const refreshToken = jwt.sign(
@@ -78,7 +77,6 @@ exports.login = asyncHandler(async (req, res) => {
   });
 
   return success(res, { accessToken });
-  console.log("ACCESS TOKEN:", accessToken);
 });
 
 //  REFRESH 
