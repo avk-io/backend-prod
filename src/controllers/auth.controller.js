@@ -69,10 +69,10 @@ exports.login = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.cookie("refreshToken", refreshToken, {
+ res.cookie("refreshToken", refreshToken, {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
   maxAge: 7 * 24 * 60 * 60 * 1000
 });
 
@@ -142,12 +142,12 @@ exports.refresh = asyncHandler(async (req, res) => {
 
   await user.save();
 
-  res.cookie("refreshToken", newRefreshToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
+  res.cookie("refreshToken", refreshToken, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+  maxAge: 7 * 24 * 60 * 60 * 1000
+});
 
   const accessToken = jwt.sign(
     { userId: user._id },
@@ -184,11 +184,11 @@ exports.logout = asyncHandler(async (req, res) => {
     await user.save();
   }
 
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict"
-  });
+ res.clearCookie("refreshToken", {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+});
 
   return success(res, { msg: "Logged Out" });
 });
