@@ -1,3 +1,5 @@
+const User = require("../models/user.model");
+
 const Listing = require("../models/listing.model");
 const { success, error } = require("../utils/response");
 const asyncHandler = require("../utils/asyncHandler");
@@ -24,8 +26,14 @@ exports.getListing = asyncHandler(async (req, res) => {
 });
 
 // POST create listing
-exports.createListing = asyncHandler(async (req, res) => {
-  const { title, description, price, category } = req.body;
+exports.createListing = asyncHandler(async(req,res)=>{
+  const user  = await User.findById(req.userId);
+
+  if(user.role!=="seller"){
+    return error(res,403,"Only sellers can add products");
+  }
+
+  const {title,description,price,category} = req.body;
 
   const listing = await Listing.create({
     title,

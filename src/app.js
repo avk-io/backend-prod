@@ -60,7 +60,8 @@ app.get("/profile", authMiddleware, asyncHandler(async (req, res) => {
     success: true,
     data: {
       userId: user._id,
-      email: user.email
+      email: user.email,
+      role:user.role
     }
   });
 }));

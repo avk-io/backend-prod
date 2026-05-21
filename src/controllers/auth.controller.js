@@ -17,11 +17,14 @@ exports.signup = asyncHandler(async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  const {role} = req.body;
+
   const user = await User.create({
     email,
-    password: hashedPassword
-  });
-
+    password:hashedPassword,
+    role : role || "buyer"
+  })
+  
   return success(res, {
     userId: user._id,
     email: user.email

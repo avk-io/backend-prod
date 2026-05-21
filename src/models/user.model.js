@@ -20,6 +20,11 @@ const userSchema = new mongoose.Schema({
     refreshMeta:{
         ip:{type: String},
         userAgent: {type: String}
+    },
+    role:{
+        type:String,
+        enum:["buyer,seller"],
+        default:"buyer"
     }
 },{ timestamps:true })
 
