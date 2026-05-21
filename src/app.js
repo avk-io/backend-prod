@@ -16,7 +16,7 @@ connectDB();
 
 app.use(helmet());
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.CLIENT_URL || "http://localhost:3001",
   credentials: true
 }));
 
@@ -43,9 +43,11 @@ const User = require("./models/user.model");
 const { error } = require("./utils/response");
 
 const authRoutes = require("./routes/auth.routes");
+const listingRoutes = require("./routes/listing.routes");
 const asyncHandler = require("./utils/asyncHandler");
 
 app.use("/auth", authRoutes);
+app.use("/listings", listingRoutes);
 
 app.get("/profile", authMiddleware, asyncHandler(async (req, res) => {
   const user = await User.findById(req.userId).select("email");
