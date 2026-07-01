@@ -34,7 +34,7 @@ const authLimiter = rateLimit({
   }
 });
 
-app.use("/auth", authLimiter);
+app.use("/api/v1/auth", authLimiter);
 
 const authMiddleware = require("./middleware/auth.middleware");
 const errorMiddleware = require("./middleware/error.middleware");
@@ -46,10 +46,10 @@ const authRoutes = require("./routes/auth.routes");
 const listingRoutes = require("./routes/listing.routes");
 const asyncHandler = require("./utils/asyncHandler");
 
-app.use("/auth", authRoutes);
-app.use("/listings", listingRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/listings", listingRoutes);
 
-app.get("/profile", authMiddleware, asyncHandler(async (req, res) => {
+app.get("/api/v1/profile", authMiddleware, asyncHandler(async (req, res) => {
   const user = await User.findById(req.userId).select("email role");
   
   if (!user) {
