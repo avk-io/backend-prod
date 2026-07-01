@@ -1,12 +1,16 @@
 require("dotenv").config();
 require("./config/env");
 
+
+
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 const http = require("http");
 const cookieParser = require("cookie-parser");
 const morgan = require("morgan");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swagger");
 
 const app = express();
 const server = http.createServer(app);
@@ -19,6 +23,8 @@ app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:3001",
   credentials: true
 }));
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(morgan("dev"));
 app.use(express.json());
