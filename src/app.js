@@ -50,8 +50,8 @@ app.use("/auth", authRoutes);
 app.use("/listings", listingRoutes);
 
 app.get("/profile", authMiddleware, asyncHandler(async (req, res) => {
-  const user = await User.findById(req.userId).select("email");
-
+  const user = await User.findById(req.userId).select("email role");
+  
   if (!user) {
     return error(res, 404, "User not found");
   }
